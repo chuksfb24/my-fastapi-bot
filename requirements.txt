@@ -1,0 +1,3 @@
+fastapi
+uvicorn
+# Add your specific bot libraries below (e.g., discord.py or python-telegram-bot)
