@@ -1,32 +1,22 @@
 import os
 import asyncio
+import urllib.parse  # 1. Import the URL parsing library
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 
 app = FastAPI(title="Bot Dashboard App with DB")
 
-# 1. Read the hidden Connection String from Render's Environment Variables
 MONGO_URI = os.environ.get("MONGO_URI")
 db = None
 
 async def start_bot_background():
-    """Your background bot loop that interacts with the cloud database."""
     print("🤖 Bot background loop initiated...")
-    
-    # Wait a moment for the database to establish a connection
     await asyncio.sleep(2)
-    
     if db is not None:
-        # Example: Save a configuration or log to the database
         logs_collection = db["bot_logs"]
-        await logs_collection.insert_one({"event": "Bot started", "timestamp": "2026-10-12"})
+        await logs_collection.insert_one({"event": "Bot started", "timestamp": "2026-10-13"})
         print("💾 Initial boot log saved permanently to MongoDB cloud!")
-        
-        # Example: Count total logged items
-        count = await logs_collection.count_documents({})
-        print(f"📊 Total saved logs in database: {count}")
-
     while True:
         await asyncio.sleep(3600) 
 
@@ -36,8 +26,18 @@ async def startup_event():
     global db
     if MONGO_URI:
         try:
-            # Connect asynchronously to your MongoDB Atlas cluster
-            client = AsyncIOMotorClient(MONGO_URI)
+            # 2. Automatically fix special characters in the connection string
+            # This safely encodes passwords containing @, :, /, +, etc.
+            parsed_uri = urllib.parse.urlparse(MONGO_URI)
+            if parsed_uri.password:
+                encoded_password = urllib.parse.quote_plus(parsed_uri.password)
+                # Reconstruct the URI with the safely escaped password
+                safe_uri = MONGO_URI.replace(parsed_uri.password, encoded_password)
+            else:
+                safe_uri = MONGO_URI
+
+            # Connect using the corrected string
+            client = AsyncIOMotorClient(safe_uri)
             db = client["my_bot_database"]
             print("🔗 Connected successfully to MongoDB Atlas Cloud!")
         except Exception as e:
@@ -49,12 +49,4 @@ async def startup_event():
 
 @app.get("/", response_class=HTMLResponse)
 async def home_dashboard():
-    return """
-    <html>
-        <head><title>Dashboard</title></head>
-        <body style="font-family: Arial; text-align: center; margin-top: 50px;">
-            <h2>🚀 Web App Dashboard</h2>
-            <p>Database Connectivity: <strong>Enabled & Persistent</strong></p>
-        </body>
-    </html>
-    """
+    return "🚀 Web App Dashboard - Running"
