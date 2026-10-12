@@ -1,3 +1,6 @@
 fastapi
 uvicorn
+fastapi==0.115.0
+uvicorn==0.31.0
+motor==3.6.0
 # Add your specific bot libraries below (e.g., discord.py or python-telegram-bot)
